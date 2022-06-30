@@ -1,0 +1,57 @@
+# This file contains the fastlane.tools configuration
+# You can find the documentation at https://docs.fastlane.tools
+#
+# For a list of all available actions, check out
+#
+#     https://docs.fastlane.tools/actions
+#
+
+# Uncomment the line if you want fastlane to automatically update itself
+# update_fastlane
+
+default_platform(:android)
+
+platform :android do
+    #desc "Runs all the tests"
+        # lane :test do
+            # gradle(task: "test")
+    #end
+
+    desc "Generate a signed APK"
+        lane :buildDebug do
+            sh("cd .. && touch changelog.txt")
+            File.write("./changelog.txt", changelog_from_git_commits(commits_count: 10, pretty: '• %s', merge_commit_filtering: 'exclude_merges'))
+            gradle(task: "clean assembleDebug")
+            # gradle(task: "test",build_type:"Debug")
+        end
+
+        lane :buildStaging do
+            sh("cd .. && touch changelog.txt")
+            File.write("./changelog.txt", changelog_from_git_commits(commits_count: 10, pretty: '• %s', merge_commit_filtering: 'exclude_merges'))
+            gradle(task: "clean assembleStaging")
+            # gradle(task: "test",build_type:"Staging")
+        end
+
+        lane :buildRelease do
+            sh("cd .. && touch changelog.txt && touch #{ENV['FILE_NAME']}.temp")
+            File.write("./changelog.txt", changelog_from_git_commits(commits_count: 10, pretty: '• %s', merge_commit_filtering: 'exclude_merges'))
+            gradle(task: "clean assembleRelease")
+            #gradle(task: "test",build_type:"Release")
+            #gradle(task: "versionTxt")
+    end
+
+    desc "Release to playstore"
+        lane :playstore do
+            # Generate Json key File
+            sh("cd .. && touch json_key_file.json.temp")
+            File.write("./json_key_file.json.temp", ENV['JSON_KEY_FILE'])
+            sh("xxd -r ./json_key_file.json.temp > ./json_key_file.json")
+            upload_to_play_store(
+                track: 'alpha',
+                skip_upload_metadata: true,
+                skip_upload_screenshots: true,
+                skip_upload_images: true,
+                apk: './app/build/outputs/apk/release/gershad.apk'
+            )
+    end
+end

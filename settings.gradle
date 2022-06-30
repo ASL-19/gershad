@@ -1,0 +1,2 @@
+include ':app', ':Shadow'// , ':ca.psiphon' - TODO Un-comment if you want to enable psiphon proxy.
+project(':Shadow').projectDir = new File('libs/Shadow')

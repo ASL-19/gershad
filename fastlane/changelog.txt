@@ -1,0 +1,10 @@
+• Updated SDK versions and dependencies-crashlytics,calligraphy,spotbugs as findbugs is deprecated
+• Add 1 git-crypt collaborator
+• Downgrade psiphon slightly to support lower Android versions.
+• Change APK name.
+• Update psiphon to 2.0.11.
+• Fix APK release build.
+• Increment build.
+• Build on Android 10.
+• Remove crashlytics.
+• Adjust manifest location.

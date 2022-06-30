@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="fastlane.lanes">
+    
+    
+    
+      
+      <testcase classname="fastlane.lanes" name="0: default_platform" time="0.000695">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="1: cd .. &amp;&amp; touch changelog.txt" time="0.01042">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="2: changelog_from_git_commits" time="0.01361">
+        
+      </testcase>
+    
+      
+      <testcase classname="fastlane.lanes" name="3: clean assembleDebug" time="67.294929">
+        
+      </testcase>
+    
+  </testsuite>
+</testsuites>

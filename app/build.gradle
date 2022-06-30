@@ -1,0 +1,258 @@
+apply plugin: 'com.android.application'
+
+apply plugin: 'kotlin-android'
+
+apply plugin: 'kotlin-kapt'
+
+apply plugin: 'kotlin-android-extensions'
+
+apply from: '../config/quality/quality.gradle' // pmd, checkstyle, findbugs, lint
+
+apply plugin: 'com.google.firebase.crashlytics'
+apply plugin: 'com.github.spotbugs'
+
+buildscript {
+    repositories {
+       //maven { url 'https://maven.fabric.io/public' }
+        maven { url 'https://plugins.gradle.org/m2/' }
+        google()
+    }
+
+    dependencies {
+        //classpath 'io.fabric.tools:gradle:1.31.2'
+        classpath "gradle.plugin.com.github.spotbugs.snom:spotbugs-gradle-plugin:4.5.1"
+    }
+}
+
+//apply plugin: 'io.fabric'
+
+repositories {
+//    maven {
+//        //url 'https://maven.fabric.io/public'
+//    }
+    maven {
+        url "https://raw.github.com/Psiphon-Labs/psiphon-tunnel-core-Android-library/master"
+    }
+}
+android {
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
+
+    defaultConfig {
+        applicationId "com.gershad.gershad"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 3026
+        versionName "3.0.9" // This is specifically used by GooglePlayStore to display the versionName to the users. Refer this link for more info - https://developer.android.com/studio/publish/versioning
+        ndk.abiFilters 'armeabi-v7a','arm64-v8a','x86','x86_64'
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+        multiDexEnabled true
+    }
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    signingConfigs {
+        debug {
+            storeFile rootProject.file('debug.keystore')
+            storePassword 'android'
+            keyAlias 'androiddebugkey'
+            keyPassword 'android'
+        }
+
+        staging {
+            storeFile rootProject.file('staging.keystore')
+            storePassword 'asl19gershadstaging'
+            keyAlias 'gershadstagingkey'
+            keyPassword 'asl19gershadstaging'
+        }
+
+        release {
+            def secretsPropertiesFile = rootProject.file("signingrelease.properties")
+            def secretProperties = new Properties()
+
+            if (secretsPropertiesFile.exists()) {
+                secretProperties.load(new FileInputStream(secretsPropertiesFile))
+            }
+            storeFile rootProject.file("signingrelease.keystore")
+            storePassword "${secretProperties['keystorePassword']}"
+            keyAlias "${secretProperties['keyAlias']}"
+            keyPassword "${secretProperties['keyPassword']}"
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix '.debug'
+        }
+
+        staging {
+            initWith release
+            signingConfig signingConfigs.staging
+            applicationIdSuffix '.staging'
+        }
+
+        release {
+            android.applicationVariants.all { variant ->
+                variant.outputs.all {
+                    outputFileName = "gershad.apk"
+                }
+            }
+            minifyEnabled true
+            signingConfig signingConfigs.release
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    flavorDimensions "store"
+    productFlavors {
+        googlePlayStore {
+            dimension "store"
+        }
+        independentStore {
+            dimension "store"
+        }
+    }
+    sourceSets {
+        googlePlayStore {
+            java.srcDirs = ['../app/src/googlePlayStore/java']
+            manifest.srcFile "../app/src/main/AndroidManifest.xml"
+        }
+        independentStore {
+            res.srcDirs = ['../app/src/independentStore/res']
+            java.srcDirs = ['../app/src/independentStore/java']
+            manifest.srcFile "../app/src/independentStore/AndroidManifest.xml"
+        }
+    }
+
+    lintOptions {
+        abortOnError true
+    }
+    checkstyle {
+        configFile = file("${project.rootDir}/config/quality/checkstyle/checkstyle.xml")
+        toolVersion = '7.0'
+    }
+}
+
+task versionTxt()  {
+    doLast {
+        new File("$projectDir/build/outputs/apk/release/version.txt").text = "$project.android.defaultConfig.versionCode"
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    def multiDexVersion = '1.0.3'
+    implementation 'androidx.multidex:multidex:2.0.1'
+    def playServicesVersion = '15.0.1'
+    implementation "com.google.android.gms:play-services-maps:$playServicesVersion"
+    implementation "com.google.android.gms:play-services-places:$playServicesVersion"
+    implementation "com.google.android.gms:play-services-location:$playServicesVersion"
+
+    implementation 'com.google.android.libraries.places:places:2.0.0'
+
+    def supportLibVersion = '27.1.1'
+    implementation 'androidx.cardview:cardview:1.0.0'
+    implementation 'androidx.vectordrawable:vectordrawable:1.0.0'
+    implementation 'com.google.android.material:material:1.0.0'
+    androidTestImplementation 'androidx.annotation:annotation:1.0.0'
+
+
+    def jUnitVersion = '4.13.1'
+    testImplementation "junit:junit:$jUnitVersion"
+
+    def testRunnerVersion = '1.0.0'
+    androidTestImplementation 'androidx.test.ext:junit:1.1.2'
+
+    def testRulesVersion = '1.0.0'
+    androidTestImplementation 'androidx.test:rules:1.1.1'
+
+    def espressoVersion = '3.0.1'
+    androidTestImplementation('androidx.test.espresso:espresso-core:3.3.0', {
+        exclude group: 'com.android.support', module: 'support-annotations'
+    })
+    androidTestImplementation('androidx.test.espresso:espresso-contrib:3.1.0') {
+        exclude group: 'com.android.support', module: 'appcompat'
+        exclude group: 'com.android.support', module: 'support-v4'
+        exclude group: 'com.android.support', module: 'support-v7'
+        exclude group: 'com.android.support', module: 'design'
+        exclude module: 'support-annotations'
+        exclude module: 'recyclerview-v7'
+    }
+    implementation "org.jetbrains.kotlin:kotlin-stdlib:$kotlin_version"
+    //implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$rootProject.ext.kotlin_version"
+
+    def constraintVersion = '1.1.3'
+    implementation 'androidx.constraintlayout:constraintlayout:1.1.3'
+
+    // Rx
+    def rxAndroidVersion = '2.0.1'
+    implementation "io.reactivex.rxjava2:rxandroid:$rxAndroidVersion"
+
+    def rxJavaVersion = '2.1.10'
+    implementation "io.reactivex.rxjava2:rxjava:$rxJavaVersion"
+
+    // Maps
+    def mapsVersion = '0.5'
+    implementation "com.google.maps.android:android-maps-utils:$mapsVersion"
+
+    // DI
+    def kapsuleVersion = '0.3'
+    implementation "space.traversal.kapsule:kapsule-core:$kapsuleVersion"
+
+    // Retrofit
+    def retrofitVersion = '2.3.0'
+    implementation "com.squareup.retrofit2:retrofit:$retrofitVersion"
+    implementation "com.squareup.retrofit2:adapter-rxjava2:$retrofitVersion"
+    implementation "com.squareup.retrofit2:converter-gson:$retrofitVersion"
+
+    def okHttpVersion = '4.9.0'
+    implementation "com.squareup.okhttp3:logging-interceptor:$okHttpVersion"
+
+    // Cognito
+    def awsSdkVersion = '2.6.4'
+    implementation "com.amazonaws:aws-android-sdk-core:$awsSdkVersion"
+    implementation "com.amazonaws:aws-android-sdk-s3:$awsSdkVersion"
+    implementation "com.amazonaws:aws-android-sdk-sns:$awsSdkVersion"
+
+    implementation "com.google.firebase:firebase-core:17.0.0"
+    implementation "com.google.firebase:firebase-messaging:20.0.0"
+    //Firebase
+    // Recommended: Add the Firebase SDK for Google Analytics.
+    implementation 'com.google.firebase:firebase-analytics:17.6.0'
+
+    // Add the Firebase Crashlytics SDK.
+    implementation 'com.google.firebase:firebase-crashlytics:17.2.2'
+//    implementation('com.crashlytics.sdk.android:crashlytics:17.2.2@aar') {
+//        transitive = true
+//    }
+
+    def parcelarVersion = '1.1.12'
+    implementation "org.parceler:parceler-api:$parcelarVersion"
+    kapt "org.parceler:parceler:$parcelarVersion"
+
+    //implementation 'ca.psiphon:psiphontunnel:2.0.13' - TODO:Un-comment if you want to enable psiphon proxy.
+
+    //def calligraphyVersion = '2.3.0'
+    //implementation "uk.co.chrisjenx:calligraphy:$calligraphyVersion"
+    implementation 'io.github.inflationx:calligraphy3:3.1.1'
+    implementation 'io.github.inflationx:viewpump:2.0.3'
+
+    def workVersion = "1.0.0-alpha08"
+    implementation 'androidx.work:work-runtime-ktx:2.0.1'
+    //Shapeshifter
+    implementation project(':Shadow')
+    implementation 'com.google.code.gson:gson:2.8.2'
+    implementation("com.google.guava:guava:31.0.1-android")
+    // Later releases of bouncycastle may not work with ShapeshifterAndroidKotlin
+    implementation 'org.bouncycastle:bcpkix-jdk15on:1.58'
+
+    // libsodium is only necessary if you plan on using ChaCha20
+    implementation 'com.github.joshjdevl.libsodiumjni:libsodium-jni-aar:2.0.2'
+    testImplementation 'com.github.joshjdevl.libsodiumjni:libsodium-jni-aar:2.0.2'
+    androidTestImplementation 'com.github.joshjdevl.libsodiumjni:libsodium-jni-aar:2.0.2'
+
+    // You can add the following for okhttp support:
+    implementation("com.squareup.okhttp3:okhttp:4.9.0")
+}
+apply plugin: 'com.google.gms.google-services'
